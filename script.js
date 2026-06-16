@@ -132,11 +132,12 @@ onValue(messagesRef, (snapshot) => {
 
     if (!data) return;
 
-    Object.entries(data).forEach(([message]) => {
-        
+    Object.entries(data).forEach(([key, message]) => {
+
         message.firebaseKey = key;
 
         addMessageToScreen(message);
+
     });
 
 });
