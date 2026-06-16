@@ -1,3 +1,26 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import {
+    getDatabase,
+    ref,
+    push,
+    onValue,
+    remove
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBVCzIC5aH8VBxczuPL__uq_jAEZh2vPmQ",
+    authDomain: "riku-chat-fddc4.firebaseapp.com",
+    databaseURL: "https://riku-chat-fddc4-default-rtdb.firebaseio.com",
+    projectId: "riku-chat-fddc4",
+    storageBucket: "riku-chat-fddc4.firebasestorage.app",
+    messagingSenderId: "967155088337",
+    appId: "1:967155088337:web:80f7ed7c3eb042a946bef0"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const messagesRef = ref(db,"messages");
 const chatBox = document.getElementById("chat-box");
 const sendBtn = document.getElementById("send-btn");
 const clearBtn = document.getElementById("clear-btn");
@@ -6,7 +29,7 @@ const messageInput = document.getElementById("message");
 
 nameInput.value = localStorage.getItem("name") || "";
 
-loadMessages();
+//loadMessages();
 
 sendBtn.addEventListener("click", sendMessage);
 clearBtn.addEventListener("click", clearMessages);
@@ -41,25 +64,20 @@ function sendMessage() {
         time
     };
 
-    addMessageToScreen(message);
-
-    const messages =
-        JSON.parse(localStorage.getItem("messages"))
-        || [];
-
-    messages.push(message);
-
-    localStorage.setItem(
-        "messages",
-        JSON.stringify(messages)
-    );
+    push(messagesRef, message);
 
     messageInput.value = "";
 }
 
 function addMessageToScreen(message) {
 
-    const { id, name, text, time } = message;
+    const { 
+        id, 
+        name, 
+        text, 
+        time,
+        firebaseKey
+    } = message;
 
     const myName = nameInput.value;
 
@@ -95,7 +113,7 @@ function addMessageToScreen(message) {
         deleteBtn.textContent = "削除";
 
         deleteBtn.onclick =
-            () => deleteMessage(id);
+            () => deleteMessage(firebaseKey);
 
         messageDiv.appendChild(deleteBtn);
     }
@@ -106,30 +124,32 @@ function addMessageToScreen(message) {
         chatBox.scrollHeight;
 }
 
-function loadMessages() {
-
-    const messages =
-        JSON.parse(localStorage.getItem("messages"))
-        || [];
-
-    messages.forEach(addMessageToScreen);
-}
-
-function deleteMessage(id) {
-
-    const messages =
-        (JSON.parse(localStorage.getItem("messages"))
-        || [])
-        .filter(m => m.id !== id);
-
-    localStorage.setItem(
-        "messages",
-        JSON.stringify(messages)
-    );
+onValue(messagesRef, (snapshot) => {
 
     chatBox.innerHTML = "";
 
-    loadMessages();
+    const data = snapshot.val();
+
+    if (!data) return;
+
+    Object.entries(data).forEach(([message]) => {
+        
+        message.firebaseKey = key;
+
+        addMessageToScreen(message);
+    });
+
+});
+
+function deleteMessage(firebaseKey) {
+
+    remove(
+        ref(
+            db,
+            "messages/" + firebaseKey
+        )
+    );
+
 }
 
 function clearMessages() {
